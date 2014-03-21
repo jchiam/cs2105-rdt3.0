@@ -9,7 +9,6 @@
  */
 
 import java.io.*;
-import java.util.*;
 
 /**
  * RDTReceiver receives a data packet from "below" and pass
@@ -17,10 +16,12 @@ import java.util.*;
  */
 class RDTReceiver {
 	UDTReceiver udt;
+	int seqNumber;
 
 	RDTReceiver(int port) throws IOException
 	{
 		udt = new UDTReceiver(port);
+		seqNumber = 0;
 	}
 
 	/**
@@ -32,10 +33,19 @@ class RDTReceiver {
 	byte[] recv() throws IOException, ClassNotFoundException
 	{
 		DataPacket p = udt.recv();
+		
+		// validate received pkt and send respective ack
+		while(p.isCorrupted==true || p.seq!=seqNumber) {		// either pkt is corrupted or wrong pkt has wrong seq
+			// send previous ack
+			udt.send(new AckPacket(alternateBit(seqNumber)));
+			
+			// wait for pkt again
+			p = udt.recv();
+		}
 
-        // send ACK
-		AckPacket ack = new AckPacket(p.seq);
-		udt.send(ack);
+		// send correct ack
+		assert p.seq == seqNumber;
+		udt.send(new AckPacket(p.seq));
 
         // deliver data
 		if (p.length > 0) {
@@ -45,6 +55,21 @@ class RDTReceiver {
 		} else {
 			return null;
 		}
+	}
+	
+	/**
+	 * Swap the bit around
+	 * i.e. 1 -> 0, 0 -> 1
+	 */
+	private int alternateBit(int bit) {
+		assert (bit==1 || bit==0);
+		if(bit==0) {
+			bit = 1;
+		} else {
+			bit = 0;
+		}
+		
+		return bit;
 	}
 
 	void close() throws IOException

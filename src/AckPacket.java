@@ -1,5 +1,3 @@
-import java.util.*;
-
 /**
  * AckPacket : Encapsulate an ACK packet.
  *
@@ -13,6 +11,7 @@ import java.util.*;
  * 12 March 2013
  */
 
+@SuppressWarnings("serial")
 class AckPacket implements java.io.Serializable {
 	public int ack;
 	public boolean isCorrupted;

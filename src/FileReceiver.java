@@ -11,7 +11,6 @@
  * CS2105, National University of Singapore
  * 1 March 2011
  */
-import java.util.*;
 import java.io.*;
 
 class FileReceiver {

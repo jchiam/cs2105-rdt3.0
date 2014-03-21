@@ -50,14 +50,24 @@ class RDTSender extends TimerTask {
 			timeOut.cancel();
 			
 			// alternate sequence number
-			assert (seqNumber==1 || seqNumber==0);
-			if(seqNumber==0) {
-				seqNumber = 1;
-			} else {
-				seqNumber = 0;
-			}
+			seqNumber = alterateBit(seqNumber);
 			return;
 		}
+	}
+
+	/**
+	 * Swap the bit around
+	 * i.e. 1 -> 0, 0 -> 1
+	 */
+	private int alterateBit(int bit) {
+		assert (bit==1 || bit==0);
+		if(bit==0) {
+			bit = 1;
+		} else {
+			bit = 0;
+		}
+		
+		return bit;
 	}
 
 	/**
