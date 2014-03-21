@@ -15,9 +15,11 @@ import java.util.*;
  * data packet, and send it via UDT.  It also receives
  * ack packets from UDT.
  */
-class RDTSender {
+class RDTSender extends TimerTask {
 	UDTSender udt;
     int seqNumber;
+    private byte[] sendData;
+    private int dataLength;
 
 	RDTSender(String hostname, int port) throws IOException
 	{
@@ -35,9 +37,27 @@ class RDTSender {
         // send packet
 		DataPacket p = new DataPacket(data, length, seqNumber);
 		udt.send(p);
-
+		
+		// start timer for timeout
+		Timer timeOut = new Timer();
+		timeOut.schedule(this, 100);		//timeout value is adjusted here
+		
         // receive ACK
 		AckPacket ack = udt.recv();
+		
+		// handle pkts with correct ack
+		if(ack.isCorrupted==false && ack.ack==seqNumber) {
+			timeOut.cancel();
+			
+			// alternate sequence number
+			assert (seqNumber==1 || seqNumber==0);
+			if(seqNumber==0) {
+				seqNumber = 1;
+			} else {
+				seqNumber = 0;
+			}
+			return;
+		}
 	}
 
 	/**
@@ -51,6 +71,7 @@ class RDTSender {
 	 * catches any EOFException (which signals the receiver
 	 * has closed the connection) and close its own connection.
 	 */
+	@SuppressWarnings("unused")
 	void close() throws IOException, ClassNotFoundException
 	{
 		DataPacket p = new DataPacket(null, 0, seqNumber);
@@ -61,6 +82,20 @@ class RDTSender {
         } 
 		finally {
 			udt.close();
+		}
+	}
+
+	@Override
+	/**
+	 * run() is called when timer timeouts.
+	 * Packet is retransmitted and timer is restarted.
+	 */
+	public void run() {
+		// retransmission
+		try {
+			this.send(sendData, dataLength);
+		} catch (ClassNotFoundException | IOException e) {
+			e.printStackTrace();
 		}
 	}
 }
