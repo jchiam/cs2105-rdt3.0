@@ -29,8 +29,8 @@ class UDTSender {
 
 	// Set the packet loss probability.  EDIT the following
 	// line to change the loss probability.
-	static double P_DROP = 0.2;
-	static double P_CORRUPT = 0.2;
+	static double P_DROP = 0;
+	static double P_CORRUPT = 0;
 
 	UDTSender (String hostname, int port) throws IOException
 	{

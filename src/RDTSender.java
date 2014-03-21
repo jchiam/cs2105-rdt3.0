@@ -15,16 +15,18 @@ import java.util.*;
  * data packet, and send it via UDT.  It also receives
  * ack packets from UDT.
  */
-class RDTSender extends TimerTask {
+class RDTSender {
 	UDTSender udt;
     int seqNumber;
-    private byte[] sendData;
-    private int dataLength;
+    String hostname;
+    int port;
 
 	RDTSender(String hostname, int port) throws IOException
 	{
 		udt = new UDTSender(hostname, port);
         seqNumber = 0;
+        this.hostname = hostname;
+        this.port = port;
 	}
 
 	/**
@@ -38,9 +40,9 @@ class RDTSender extends TimerTask {
 		DataPacket p = new DataPacket(data, length, seqNumber);
 		udt.send(p);
 		
-		// start timer for timeout
+		// start timer
 		Timer timeOut = new Timer();
-		timeOut.schedule(this, 100);		//timeout value is adjusted here
+		timeOut.schedule(new sendWithTimer(data, length, hostname, port), 100);
 		
         // receive ACK
 		AckPacket ack = udt.recv();
@@ -51,7 +53,6 @@ class RDTSender extends TimerTask {
 			
 			// alternate sequence number
 			seqNumber = alterateBit(seqNumber);
-			return;
 		}
 	}
 
@@ -94,6 +95,22 @@ class RDTSender extends TimerTask {
 			udt.close();
 		}
 	}
+}
+
+class sendWithTimer extends TimerTask {
+	byte[] data;
+	int length;
+	RDTSender rdt;
+	
+	public sendWithTimer(byte[] data, int length, String hostname, int port) {
+		this.data = data;
+		this.length = length;
+		try {
+			rdt = new RDTSender(hostname, port);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	@Override
 	/**
@@ -101,9 +118,8 @@ class RDTSender extends TimerTask {
 	 * Packet is retransmitted and timer is restarted.
 	 */
 	public void run() {
-		// retransmission
 		try {
-			this.send(sendData, dataLength);
+			rdt.send(data, length);
 		} catch (ClassNotFoundException | IOException e) {
 			e.printStackTrace();
 		}
