@@ -53,6 +53,8 @@ class RDTSender {
 			
 			// alternate sequence number
 			seqNumber = alterateBit(seqNumber);
+		} else if(ack.isCorrupted == true || ack.ack!=seqNumber) {	// handle corrupted pkts or wrong ack number
+			ack = udt.recv();
 		}
 	}
 
