@@ -42,20 +42,22 @@ class RDTSender {
 		
 		// start timer
 		Timer timeOut = new Timer();
-		timeOut.schedule(new sendWithTimer(data, length, hostname, port), 100);
+		timeOut.schedule(new sendWithTimer(p), 100, 100);
 		
         // receive ACK
 		AckPacket ack = udt.recv();
 		
-		// handle pkts with correct ack
-		if(ack.isCorrupted==false && ack.ack==seqNumber) {
-			timeOut.cancel();
-			
-			// alternate sequence number
-			seqNumber = alterateBit(seqNumber);
-		} else if(ack.isCorrupted == true || ack.ack!=seqNumber) {	// handle corrupted pkts or wrong ack number
+		// waits for ack until valid ack is received
+		while(ack.isCorrupted==true || ack.ack!=seqNumber) {
 			ack = udt.recv();
 		}
+		
+		// handle pkts with correct ack
+		assert (ack.isCorrupted==false && ack.ack==seqNumber);
+		timeOut.cancel();
+			
+		// alternate sequence number
+		seqNumber = alterateBit(seqNumber);
 	}
 
 	/**
@@ -89,41 +91,36 @@ class RDTSender {
 	{
 		DataPacket p = new DataPacket(null, 0, seqNumber);
 		udt.send(p);
+		System.out.println("S: send null packet");
 		try {
 			AckPacket ack = udt.recv();
 		} catch (EOFException e) {
+			System.out.println("S: Connection to R closed.\n");
         } 
 		finally {
 			udt.close();
 		}
 	}
-}
-
-class sendWithTimer extends TimerTask {
-	byte[] data;
-	int length;
-	RDTSender rdt;
 	
-	public sendWithTimer(byte[] data, int length, String hostname, int port) {
-		this.data = data;
-		this.length = length;
-		try {
-			rdt = new RDTSender(hostname, port);
-		} catch (IOException e) {
-			e.printStackTrace();
+	class sendWithTimer extends TimerTask {
+		DataPacket p;
+		
+		public sendWithTimer(DataPacket p) {
+			this.p = p;
 		}
-	}
 
-	@Override
-	/**
-	 * run() is called when timer timeouts.
-	 * Packet is retransmitted and timer is restarted.
-	 */
-	public void run() {
-		try {
-			rdt.send(data, length);
-		} catch (ClassNotFoundException | IOException e) {
-			e.printStackTrace();
+		@Override
+		/**
+		 * run() is called when timer timeouts.
+		 * Packet is retransmitted and timer is restarted.
+		 */
+		public void run() {
+			try {
+				udt.send(p);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 }
