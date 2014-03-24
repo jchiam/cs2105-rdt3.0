@@ -45,8 +45,18 @@ class RDTReceiver {
 
 		// send correct ack
 		assert p.seq == seqNumber;
-		udt.send(new AckPacket(p.seq));
-
+		// terminate if packet received is terminating pkt
+		if(p.data == null) {
+			System.out.println("R: terminating packet received.");
+			udt.send(new AckPacket(p.seq));
+			udt.close();
+			return null;
+		} else {
+			udt.send(new AckPacket(p.seq));
+		}
+		
+		seqNumber = alternateBit(seqNumber);
+		
         // deliver data
 		if (p.length > 0) {
 			byte [] copy = new byte[p.length];

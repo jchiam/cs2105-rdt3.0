@@ -42,7 +42,7 @@ class RDTSender {
 		
 		// start timer
 		Timer timeOut = new Timer();
-		timeOut.schedule(new sendWithTimer(p), 100, 100);
+		timeOut.schedule(new senderWithTimer(p), 100, 100);
 		
         // receive ACK
 		AckPacket ack = udt.recv();
@@ -55,7 +55,7 @@ class RDTSender {
 		// handle pkts with correct ack
 		assert (ack.isCorrupted==false && ack.ack==seqNumber);
 		timeOut.cancel();
-			
+		
 		// alternate sequence number
 		seqNumber = alterateBit(seqNumber);
 	}
@@ -86,26 +86,37 @@ class RDTSender {
 	 * catches any EOFException (which signals the receiver
 	 * has closed the connection) and close its own connection.
 	 */
-	@SuppressWarnings("unused")
 	void close() throws IOException, ClassNotFoundException
 	{
 		DataPacket p = new DataPacket(null, 0, seqNumber);
 		udt.send(p);
-		System.out.println("S: send null packet");
+		System.out.println("S: send terminating pkt");
+		
+		// start timer
+		Timer timeOut = new Timer();
+		timeOut.schedule(new senderWithTimer(p), 100, 100);
+				
 		try {
 			AckPacket ack = udt.recv();
+			
+			while(ack.isCorrupted==true || ack.ack!=seqNumber) {
+				ack = udt.recv();
+			}
+			
+			// handle pkts with correct ack
+			assert (ack.isCorrupted==false && ack.ack==seqNumber);
+			timeOut.cancel();
 		} catch (EOFException e) {
-			System.out.println("S: Connection to R closed.\n");
-        } 
-		finally {
+			//TODO
+		} finally {
 			udt.close();
 		}
 	}
 	
-	class sendWithTimer extends TimerTask {
+	class senderWithTimer extends TimerTask {
 		DataPacket p;
 		
-		public sendWithTimer(DataPacket p) {
+		public senderWithTimer(DataPacket p) {
 			this.p = p;
 		}
 
@@ -116,9 +127,9 @@ class RDTSender {
 		 */
 		public void run() {
 			try {
+				System.out.println("S: Timeout");
 				udt.send(p);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

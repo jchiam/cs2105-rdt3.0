@@ -28,9 +28,9 @@ class UDTReceiver {
 	ObjectInputStream ois;
 	ObjectOutputStream oos;
 	
-	static double P_DROP = 0;
-	static double P_CORRUPT = 0;
-
+	static double P_DROP = 0.0;
+	static double P_CORRUPT = 0.5;
+	
 	Random random;
 	
 	UDTReceiver(int port) throws IOException {
