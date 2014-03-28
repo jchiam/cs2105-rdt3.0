@@ -9,6 +9,7 @@
  */
 import java.io.*;
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.util.*;
 
 /**
@@ -113,6 +114,9 @@ class RDTSender {
 			assert (ack.isCorrupted==false && ack.ack==seqNumber);
 			timeOut.cancel();
 		} catch (EOFException e) {
+			System.out.println("S: connection to R closed");
+			timeOut.cancel();
+		} catch (SocketException e) {
 			System.out.println("S: connection to R closed");
 			timeOut.cancel();
 		} finally {
