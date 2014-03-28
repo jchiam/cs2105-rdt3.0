@@ -8,6 +8,7 @@
  * 12 March 2013
  */
 import java.io.*;
+import java.net.ConnectException;
 import java.util.*;
 
 /**
@@ -23,7 +24,12 @@ class RDTSender {
 
 	RDTSender(String hostname, int port) throws IOException
 	{
-		udt = new UDTSender(hostname, port);
+		try {
+			udt = new UDTSender(hostname, port);
+		} catch (ConnectException e) {
+			System.out.println("Connection refused. Ensure receiver is accepting connections.");
+			System.exit(0);
+		}
         seqNumber = 0;
         this.hostname = hostname;
         this.port = port;
@@ -107,7 +113,8 @@ class RDTSender {
 			assert (ack.isCorrupted==false && ack.ack==seqNumber);
 			timeOut.cancel();
 		} catch (EOFException e) {
-			//TODO
+			System.out.println("S: connection to R closed");
+			timeOut.cancel();
 		} finally {
 			udt.close();
 		}

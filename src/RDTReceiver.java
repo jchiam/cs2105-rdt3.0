@@ -9,6 +9,7 @@
  */
 
 import java.io.*;
+import java.net.BindException;
 
 /**
  * RDTReceiver receives a data packet from "below" and pass
@@ -20,7 +21,12 @@ class RDTReceiver {
 
 	RDTReceiver(int port) throws IOException
 	{
-		udt = new UDTReceiver(port);
+		try {
+			udt = new UDTReceiver(port);
+		} catch (BindException e) {
+			System.out.println("Port already in use. Please use another.");
+			System.exit(0);
+		}
 		seqNumber = 0;
 	}
 
